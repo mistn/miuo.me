@@ -275,8 +275,11 @@ h1 {
 }
 
 .message-dialog {
-  width: min(100% - 32px, 430px);
+  width: min(calc(100vw - 32px), 430px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
   padding: 0;
+  overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
@@ -378,6 +381,12 @@ h1 {
 
 .turnstile-slot:empty {
   display: none;
+}
+
+.turnstile-slot {
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .message-status {
@@ -530,5 +539,32 @@ h1 {
     font-size: 14px;
     line-height: 1.52;
     padding: 22px 20px 24px;
+  }
+
+  .message-dialog {
+    width: min(calc(100vw - 40px), 390px);
+    max-height: calc(100dvh - 40px);
+  }
+
+  .message-form {
+    gap: 15px;
+    padding: 20px 18px 22px;
+  }
+
+  .message-header button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .message-form input {
+    min-height: 44px;
+  }
+
+  .message-form textarea {
+    min-height: 142px;
+  }
+
+  .message-submit {
+    min-height: 46px;
   }
 }
