@@ -92,6 +92,16 @@ a {
   background: #ffffff;
   object-fit: cover;
   box-shadow: 0 18px 42px rgba(31, 39, 43, 0.14);
+  transition:
+    transform 180ms ease,
+    filter 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.035);
+  filter: brightness(1.04);
+  box-shadow: 0 22px 48px rgba(31, 39, 43, 0.18);
 }
 
 .eyebrow {
@@ -212,8 +222,7 @@ h1 {
 
 .terminal-screen {
   min-height: 250px;
-  max-height: 320px;
-  overflow: auto;
+  overflow: hidden;
   padding: 26px 30px 30px;
   color: #445057;
   font-family: Consolas, Monaco, "Courier New", monospace;
@@ -236,6 +245,22 @@ h1 {
 .terminal-screen span {
   color: #335dff;
   font-weight: 700;
+}
+
+.terminal-screen i {
+  display: inline-block;
+  width: 1px;
+  height: 1.05em;
+  margin-left: 3px;
+  background: rgba(68, 80, 87, 0.7);
+  vertical-align: -0.16em;
+  animation: cursor-blink 1.2s steps(2, start) infinite;
+}
+
+@keyframes cursor-blink {
+  to {
+    visibility: hidden;
+  }
 }
 
 .sr-only {
