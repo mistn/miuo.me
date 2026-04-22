@@ -27,6 +27,15 @@ function validEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function turnstileSiteKey(env) {
+  return (
+    env.PUBLIC_TURNSTILE_SITE_KEY ||
+    env.TURNSTILE_SITE_KEY ||
+    env.CF_TURNSTILE_SITE_KEY ||
+    ""
+  );
+}
+
 async function sha256(value) {
   const data = new TextEncoder().encode(value);
   const hash = await crypto.subtle.digest("SHA-256", data);
@@ -277,8 +286,12 @@ export default {
 
     if (url.pathname === "/api/config") {
       return json({
-        turnstileSiteKey:
-          env.PUBLIC_TURNSTILE_SITE_KEY || env.TURNSTILE_SITE_KEY || "",
+        turnstileSiteKey: turnstileSiteKey(env),
+        configured: {
+          turnstileSiteKey: Boolean(turnstileSiteKey(env)),
+          turnstileSecret: Boolean(env.TURNSTILE_SECRET_KEY),
+          rateLimit: Boolean(env.MESSAGE_RATE_LIMIT),
+        },
       });
     }
 
