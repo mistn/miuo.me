@@ -401,19 +401,20 @@ h1 {
   .home {
     min-height: 100svh;
     overflow: auto;
+    background-position: center top;
   }
 
   .hero {
-    width: min(100% - 32px, 1180px);
+    width: min(100% - 28px, 620px);
   }
 
   .hero {
     grid-template-columns: 1fr;
-    gap: 34px;
+    gap: 28px;
     justify-items: center;
     align-items: start;
     min-height: auto;
-    padding: 92px 0 110px;
+    padding: 72px 0 34px;
   }
 
   .profile-card,
@@ -429,18 +430,33 @@ h1 {
     font-size: 17px;
   }
 
+  .profile-card {
+    width: 100%;
+    max-width: 500px;
+  }
+
   .terminal {
     max-width: 620px;
   }
 
+  .terminal-screen {
+    max-height: none;
+  }
+
   .copyright {
-    right: 16px;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    padding: 0 18px 22px;
+    text-align: right;
   }
 }
 
 @media (max-width: 560px) {
   .hero {
-    padding-top: 86px;
+    width: min(100% - 24px, 430px);
+    gap: 22px;
+    padding-top: 58px;
   }
 
   h1 {
@@ -449,19 +465,45 @@ h1 {
 
   .intro {
     font-size: 16px;
+    line-height: 1.62;
   }
 
   .profile-card {
     min-height: 0;
-    padding: 78px 24px 26px;
+    padding: 68px 24px 24px;
   }
 
   .profile-avatar {
-    width: 104px;
-    height: 104px;
+    top: -44px;
+    width: 96px;
+    height: 96px;
+    border-width: 7px;
+  }
+
+  .eyebrow {
+    margin-top: 18px;
+    padding-top: 20px;
+  }
+
+  .actions {
+    margin-top: 24px;
+  }
+
+  .terminal-bar {
+    height: 34px;
+    grid-template-columns: 10px 10px 10px 1fr;
+    gap: 7px;
+    padding: 0 12px;
+  }
+
+  .terminal-bar span {
+    width: 10px;
+    height: 10px;
   }
 
   .terminal-screen {
     font-size: 14px;
+    line-height: 1.52;
+    padding: 22px 20px 24px;
   }
 }
