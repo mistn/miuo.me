@@ -33,7 +33,11 @@ function turnstileSiteKey(env) {
     env.TURNSTILE_SITE_KEY ||
     env.CF_TURNSTILE_SITE_KEY ||
     ""
-  );
+  ).trim();
+}
+
+function turnstileSecretKey(env) {
+  return (env.TURNSTILE_SECRET_KEY || "").trim();
 }
 
 async function sha256(value) {
@@ -68,7 +72,9 @@ function sameSiteRequest(request) {
 }
 
 async function verifyTurnstile(request, env, token) {
-  if (!env.TURNSTILE_SECRET_KEY) {
+  const secretKey = turnstileSecretKey(env);
+
+  if (!secretKey) {
     return {
       ok: false,
       status: 503,
@@ -85,7 +91,7 @@ async function verifyTurnstile(request, env, token) {
   }
 
   const formData = new FormData();
-  formData.append("secret", env.TURNSTILE_SECRET_KEY);
+  formData.append("secret", secretKey);
   formData.append("response", token);
 
   const remoteIp = clientIp(request);
@@ -289,7 +295,7 @@ export default {
         turnstileSiteKey: turnstileSiteKey(env),
         configured: {
           turnstileSiteKey: Boolean(turnstileSiteKey(env)),
-          turnstileSecret: Boolean(env.TURNSTILE_SECRET_KEY),
+          turnstileSecret: Boolean(turnstileSecretKey(env)),
           rateLimit: Boolean(env.MESSAGE_RATE_LIMIT),
         },
       });

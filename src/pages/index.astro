@@ -176,7 +176,9 @@ const profile = {
         });
         const config = await configResponse.json().catch(() => ({}));
         const siteKey =
-          typeof config.turnstileSiteKey === "string" ? config.turnstileSiteKey : "";
+          typeof config.turnstileSiteKey === "string"
+            ? config.turnstileSiteKey.trim()
+            : "";
         if (!siteKey) return;
 
         await loadTurnstileScript();
@@ -186,7 +188,10 @@ const profile = {
             reset: () => void;
           };
         };
-        turnstileWindow.turnstile?.render(turnstileSlot, { sitekey: siteKey });
+        if (!turnstileWindow.turnstile) {
+          throw new Error("Turnstile script did not load.");
+        }
+        turnstileWindow.turnstile.render(turnstileSlot, { sitekey: siteKey });
         turnstileRendered = true;
       }
 
