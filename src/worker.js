@@ -1,11 +1,15 @@
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 160;
 const MAX_MESSAGE_LENGTH = 2000;
+const MIN_MESSAGE_LENGTH = 8;
 const RATE_LIMIT_WINDOW_SECONDS = 10 * 60;
 const RATE_LIMIT_DAY_SECONDS = 24 * 60 * 60;
-const RATE_LIMIT_WINDOW_MAX = 3;
-const RATE_LIMIT_DAY_MAX = 20;
-const DUPLICATE_TTL_SECONDS = 24 * 60 * 60;
+const RATE_LIMIT_HOUR_SECONDS = 60 * 60;
+const RATE_LIMIT_WINDOW_MAX = 2;
+const RATE_LIMIT_DAY_MAX = 8;
+const RATE_LIMIT_EMAIL_DAY_MAX = 3;
+const RATE_LIMIT_GLOBAL_HOUR_MAX = 30;
+const DUPLICATE_TTL_SECONDS = 48 * 60 * 60;
 const ALLOWED_HOSTS = new Set(["miuo.me", "www.miuo.me"]);
 const SUCCESS_MESSAGE = "Thanks, your message was sent.";
 
@@ -25,6 +29,11 @@ function cleanString(value) {
 
 function validEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function likelyLowEffortMessage(value) {
+  const compact = value.replace(/\s+/g, "");
+  return /^\d+$/.test(compact) || /^(.)(\1{4,})$/.test(compact);
 }
 
 function turnstileSiteKey(env) {
@@ -158,30 +167,44 @@ async function rateLimit(request, env, payload) {
   }
 
   const ipHash = await sha256(clientIp(request));
+  const emailHash = await sha256(payload.email.toLowerCase());
   const contentHash = await sha256(
     `${payload.email.toLowerCase()}:${payload.message.toLowerCase()}`,
   );
   const windowKey = `rl:${ipHash}:10m`;
   const dayKey = `rl:${ipHash}:24h`;
+  const emailDayKey = `rl-email:${emailHash}:24h`;
+  const globalHourKey = "rl-global:1h";
   const duplicateKey = `dup:${ipHash}:${contentHash}`;
 
-  const [windowCount, dayCount, duplicate] = await Promise.all([
+  const [windowCount, dayCount, emailDayCount, globalHourCount, duplicate] =
+    await Promise.all([
     getCounter(env.MESSAGE_RATE_LIMIT, windowKey),
     getCounter(env.MESSAGE_RATE_LIMIT, dayKey),
+    getCounter(env.MESSAGE_RATE_LIMIT, emailDayKey),
+    getCounter(env.MESSAGE_RATE_LIMIT, globalHourKey),
     env.MESSAGE_RATE_LIMIT.get(duplicateKey),
   ]);
 
   if (
     windowCount >= RATE_LIMIT_WINDOW_MAX ||
     dayCount >= RATE_LIMIT_DAY_MAX ||
+    emailDayCount >= RATE_LIMIT_EMAIL_DAY_MAX ||
+    globalHourCount >= RATE_LIMIT_GLOBAL_HOUR_MAX ||
     duplicate
   ) {
-    return { ok: false, silent: true };
+    return {
+      ok: false,
+      silent: true,
+      reason: duplicate ? "duplicate" : "rate_limited",
+    };
   }
 
   await Promise.all([
     incrementCounter(env.MESSAGE_RATE_LIMIT, windowKey, RATE_LIMIT_WINDOW_SECONDS),
     incrementCounter(env.MESSAGE_RATE_LIMIT, dayKey, RATE_LIMIT_DAY_SECONDS),
+    incrementCounter(env.MESSAGE_RATE_LIMIT, emailDayKey, RATE_LIMIT_DAY_SECONDS),
+    incrementCounter(env.MESSAGE_RATE_LIMIT, globalHourKey, RATE_LIMIT_HOUR_SECONDS),
     env.MESSAGE_RATE_LIMIT.put(duplicateKey, "1", {
       expirationTtl: DUPLICATE_TTL_SECONDS,
     }),
@@ -263,8 +286,8 @@ async function handleMessage(request, env) {
     return json({ message: "Please enter a valid email address." }, 400);
   }
 
-  if (message.length < 2) {
-    return json({ message: "Please write a message first." }, 400);
+  if (message.length < MIN_MESSAGE_LENGTH || likelyLowEffortMessage(message)) {
+    return json({ message: "Please write a longer message." }, 400);
   }
 
   const verification = await verifyTurnstile(request, env, turnstileToken);
@@ -274,6 +297,9 @@ async function handleMessage(request, env) {
 
   const limit = await rateLimit(request, env, { email, message });
   if (!limit.ok) {
+    if (email.toLowerCase() === env.MESSAGE_TO?.toLowerCase()) {
+      return json({ message: `Rate limit active: ${limit.reason}.` }, 429);
+    }
     if (limit.silent) return json({ message: SUCCESS_MESSAGE });
     return json({ message: limit.message }, limit.status);
   }
