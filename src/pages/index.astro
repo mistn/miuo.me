@@ -21,13 +21,22 @@ const profile = {
       content="A clean, single-page personal homepage built with Astro."
     />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preload" href="/home-bg.png" as="image" type="image/png" />
+    <link rel="preload" href="/avatar.avif" as="image" type="image/avif" />
     <title>{profile.name} - Home</title>
   </head>
   <body>
     <main class="home">
       <section class="hero" id="about" aria-labelledby="home-title">
         <div class="profile-card">
-          <img class="profile-avatar" src="/avatar.avif" alt="" />
+          <img
+            class="profile-avatar"
+            src="/avatar.avif"
+            alt=""
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
           <h1 id="home-title">{profile.name}</h1>
           <p class="eyebrow">{profile.role}</p>
           <p class="intro">{profile.intro}</p>
