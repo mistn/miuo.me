@@ -351,6 +351,10 @@ h1 {
   pointer-events: none;
 }
 
+.turnstile-slot:empty {
+  display: none;
+}
+
 .message-status {
   min-height: 20px;
   margin: -2px 0 0;

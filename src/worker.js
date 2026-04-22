@@ -275,6 +275,13 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/api/config") {
+      return json({
+        turnstileSiteKey:
+          env.PUBLIC_TURNSTILE_SITE_KEY || env.TURNSTILE_SITE_KEY || "",
+      });
+    }
+
     if (url.pathname === "/api/message") {
       return handleMessage(request, env);
     }

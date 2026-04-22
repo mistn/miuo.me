@@ -9,7 +9,6 @@ const profile = {
   email: "hi@miuo.me",
 };
 
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
 <!doctype html>
@@ -56,14 +55,14 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
         </section>
       </section>
 
-      <p class="copyright">© 2026 / {profile.name}</p>
+      <p class="copyright">&copy; 2026 / {profile.name}</p>
 
       <dialog class="message-dialog" data-message-dialog aria-labelledby="message-title">
         <form class="message-form" data-message-form action="/api/message" method="post">
           <div class="message-header">
             <h2 id="message-title">Message</h2>
             <button type="button" data-message-close aria-label="Close message form">
-              ×
+              &times;
             </button>
           </div>
 
@@ -91,11 +90,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
             aria-hidden="true"
           />
 
-          {
-            turnstileSiteKey ? (
-              <div class="cf-turnstile" data-sitekey={turnstileSiteKey}></div>
-            ) : null
-          }
+          <div class="turnstile-slot" data-turnstile-slot></div>
 
           <p class="message-status" data-message-status aria-live="polite"></p>
 
@@ -103,16 +98,6 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
         </form>
       </dialog>
     </main>
-    {
-      turnstileSiteKey ? (
-        <script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-          async
-          defer
-          is:inline
-        ></script>
-      ) : null
-    }
     <script>
       const terminal = document.querySelector("[data-draggable-window]");
       const handle = document.querySelector("[data-drag-handle]");
@@ -164,6 +149,46 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       const messageDialog = document.querySelector("[data-message-dialog]");
       const messageForm = document.querySelector("[data-message-form]");
       const messageStatus = document.querySelector("[data-message-status]");
+      const turnstileSlot = document.querySelector("[data-turnstile-slot]");
+      let turnstileScript: Promise<void> | null = null;
+      let turnstileRendered = false;
+
+      function loadTurnstileScript() {
+        if (turnstileScript) return turnstileScript;
+        turnstileScript = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+          script.async = true;
+          script.defer = true;
+          script.dataset.turnstileScript = "true";
+          script.addEventListener("load", () => resolve(), { once: true });
+          script.addEventListener("error", () => reject(), { once: true });
+          document.head.append(script);
+        });
+        return turnstileScript;
+      }
+
+      async function renderTurnstile() {
+        if (!(turnstileSlot instanceof HTMLElement) || turnstileRendered) return;
+
+        const configResponse = await fetch("/api/config", {
+          headers: { accept: "application/json" },
+        });
+        const config = await configResponse.json().catch(() => ({}));
+        const siteKey =
+          typeof config.turnstileSiteKey === "string" ? config.turnstileSiteKey : "";
+        if (!siteKey) return;
+
+        await loadTurnstileScript();
+        const turnstileWindow = window as Window & {
+          turnstile?: {
+            render: (container: HTMLElement, options: { sitekey: string }) => void;
+            reset: () => void;
+          };
+        };
+        turnstileWindow.turnstile?.render(turnstileSlot, { sitekey: siteKey });
+        turnstileRendered = true;
+      }
 
       if (
         openMessage instanceof HTMLButtonElement &&
@@ -175,6 +200,9 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
         openMessage.addEventListener("click", () => {
           messageStatus.textContent = "";
           messageDialog.showModal();
+          renderTurnstile().catch(() => {
+            messageStatus.textContent = "Message verification could not load.";
+          });
         });
 
         closeMessage.addEventListener("click", () => {

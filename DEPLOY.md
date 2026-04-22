@@ -28,14 +28,13 @@ MESSAGE_TO=your-email@example.com
 `MESSAGE_TO` is stored as a Cloudflare Worker secret. Visitors submit messages
 to `/api/message`; they do not see the recipient address in the page source.
 
-Optional Turnstile spam protection:
 Turnstile is required for production message submissions.
 
 ```sh
 pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
-Also set this build/runtime variable so Astro can render the widget:
+Also set this Worker variable so the page can render the widget:
 
 ```txt
 PUBLIC_TURNSTILE_SITE_KEY=<your Turnstile site key>
