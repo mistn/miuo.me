@@ -1,0 +1,4 @@
+RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxxxxxx"
+MESSAGE_FROM="hi@miuo.me"
+MESSAGE_TO="your-email@example.com"
+TURNSTILE_SECRET_KEY=""

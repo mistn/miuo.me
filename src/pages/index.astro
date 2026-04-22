@@ -1,0 +1,243 @@
+---
+import "../styles/global.css";
+
+const profile = {
+  name: "miuo",
+  role: "Developer / Maker",
+  intro:
+    "I build small, focused web projects and keep notes on design, code, music, and open source.",
+  email: "hi@miuo.me",
+};
+
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A clean, single-page personal homepage built with Astro."
+    />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>{profile.name} - Home</title>
+  </head>
+  <body>
+    <main class="home">
+      <section class="hero" id="about" aria-labelledby="home-title">
+        <div class="profile-card">
+          <img class="profile-avatar" src="/avatar.avif" alt="" />
+          <h1 id="home-title">{profile.name}</h1>
+          <p class="eyebrow">{profile.role}</p>
+          <p class="intro">{profile.intro}</p>
+
+          <div class="actions">
+            <button type="button" data-message-open>Message</button>
+          </div>
+        </div>
+
+        <section class="terminal" data-draggable-window aria-label="Terminal profile">
+          <div class="terminal-bar" data-drag-handle>
+            <span></span>
+            <span></span>
+            <span></span>
+            <strong>home - bash</strong>
+          </div>
+          <div class="terminal-screen">
+            <p><b>guest@home</b> <span>~</span> ./about.sh</p>
+            <p>miuo</p>
+            <p>Developer / Maker</p>
+            <p>Small web projects, notes, music, and open source.</p>
+            <p><b>guest@home</b> <span>~</span> cat email.txt</p>
+            <p>Email hi@miuo.me</p>
+          </div>
+        </section>
+      </section>
+
+      <p class="copyright">© 2026 / {profile.name}</p>
+
+      <dialog class="message-dialog" data-message-dialog aria-labelledby="message-title">
+        <form class="message-form" data-message-form action="/api/message" method="post">
+          <div class="message-header">
+            <h2 id="message-title">Message</h2>
+            <button type="button" data-message-close aria-label="Close message form">
+              ×
+            </button>
+          </div>
+
+          <label>
+            <span>Name</span>
+            <input name="name" type="text" autocomplete="name" maxlength="80" />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input name="email" type="email" autocomplete="email" maxlength="160" required />
+          </label>
+
+          <label>
+            <span>Message</span>
+            <textarea name="message" rows="5" maxlength="2000" required></textarea>
+          </label>
+
+          <input
+            class="message-trap"
+            name="website"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+            aria-hidden="true"
+          />
+
+          {
+            turnstileSiteKey ? (
+              <div class="cf-turnstile" data-sitekey={turnstileSiteKey}></div>
+            ) : null
+          }
+
+          <p class="message-status" data-message-status aria-live="polite"></p>
+
+          <button class="message-submit" type="submit">Send</button>
+        </form>
+      </dialog>
+    </main>
+    {
+      turnstileSiteKey ? (
+        <script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+          is:inline
+        ></script>
+      ) : null
+    }
+    <script>
+      const terminal = document.querySelector("[data-draggable-window]");
+      const handle = document.querySelector("[data-drag-handle]");
+
+      if (terminal instanceof HTMLElement && handle instanceof HTMLElement) {
+        const terminalWindow = terminal;
+        const dragHandle = handle;
+        let startX = 0;
+        let startY = 0;
+        let originX = 0;
+        let originY = 0;
+        let dragging = false;
+
+        function moveWindow(x: number, y: number) {
+          if (window.matchMedia("(max-width: 860px)").matches) return;
+          const nextX = originX + x - startX;
+          const nextY = originY + y - startY;
+          terminalWindow.style.setProperty("--drag-x", `${nextX}px`);
+          terminalWindow.style.setProperty("--drag-y", `${nextY}px`);
+        }
+
+        dragHandle.addEventListener("pointerdown", (event) => {
+          if (window.matchMedia("(max-width: 860px)").matches) return;
+          dragging = true;
+          startX = event.clientX;
+          startY = event.clientY;
+          originX = Number.parseFloat(terminalWindow.style.getPropertyValue("--drag-x")) || 0;
+          originY = Number.parseFloat(terminalWindow.style.getPropertyValue("--drag-y")) || 0;
+          dragHandle.setPointerCapture(event.pointerId);
+        });
+
+        dragHandle.addEventListener("pointermove", (event) => {
+          if (!dragging) return;
+          moveWindow(event.clientX, event.clientY);
+        });
+
+        dragHandle.addEventListener("pointerup", (event) => {
+          dragging = false;
+          dragHandle.releasePointerCapture(event.pointerId);
+        });
+
+        dragHandle.addEventListener("pointercancel", () => {
+          dragging = false;
+        });
+      }
+
+      const openMessage = document.querySelector("[data-message-open]");
+      const closeMessage = document.querySelector("[data-message-close]");
+      const messageDialog = document.querySelector("[data-message-dialog]");
+      const messageForm = document.querySelector("[data-message-form]");
+      const messageStatus = document.querySelector("[data-message-status]");
+
+      if (
+        openMessage instanceof HTMLButtonElement &&
+        closeMessage instanceof HTMLButtonElement &&
+        messageDialog instanceof HTMLDialogElement &&
+        messageForm instanceof HTMLFormElement &&
+        messageStatus instanceof HTMLElement
+      ) {
+        openMessage.addEventListener("click", () => {
+          messageStatus.textContent = "";
+          messageDialog.showModal();
+        });
+
+        closeMessage.addEventListener("click", () => {
+          messageDialog.close();
+        });
+
+        messageDialog.addEventListener("click", (event) => {
+          if (event.target === messageDialog) {
+            messageDialog.close();
+          }
+        });
+
+        messageForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          const submitButton = messageForm.querySelector("button[type='submit']");
+          const formData = new FormData(messageForm);
+          const turnstile = window as Window & {
+            turnstile?: { reset: () => void };
+          };
+
+          if (submitButton instanceof HTMLButtonElement) {
+            submitButton.disabled = true;
+          }
+
+          messageStatus.textContent = "Sending...";
+
+          try {
+            const response = await fetch(messageForm.action, {
+              method: "POST",
+              headers: {
+                "content-type": "application/json",
+              },
+              body: JSON.stringify({
+                name: formData.get("name"),
+                email: formData.get("email"),
+                message: formData.get("message"),
+                website: formData.get("website"),
+                turnstileToken: formData.get("cf-turnstile-response"),
+              }),
+            });
+            const result = await response.json().catch(() => ({}));
+
+            messageStatus.textContent =
+              typeof result.message === "string"
+                ? result.message
+                : response.ok
+                  ? "Thanks, your message was sent."
+                  : "Could not send your message right now.";
+
+            if (response.ok) {
+              messageForm.reset();
+              turnstile.turnstile?.reset();
+            }
+          } catch {
+            messageStatus.textContent = "Could not send your message right now.";
+          } finally {
+            if (submitButton instanceof HTMLButtonElement) {
+              submitButton.disabled = false;
+            }
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
