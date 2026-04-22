@@ -39,7 +39,7 @@ a {
   overflow: hidden;
   background:
     linear-gradient(90deg, rgba(246, 250, 248, 0.52) 0%, rgba(246, 250, 248, 0.32) 48%, rgba(246, 250, 248, 0.14) 100%),
-    url("/home-bg.png") center / cover no-repeat;
+    url("/home-bg.avif") center / cover no-repeat;
 }
 
 .home::before {
