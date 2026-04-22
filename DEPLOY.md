@@ -29,13 +29,38 @@ MESSAGE_TO=your-email@example.com
 to `/api/message`; they do not see the recipient address in the page source.
 
 Optional Turnstile spam protection:
+Turnstile is required for production message submissions.
 
 ```sh
 pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
-If Turnstile is enabled, also set `PUBLIC_TURNSTILE_SITE_KEY` in the build
-environment so Astro can render the widget.
+Also set this build/runtime variable so Astro can render the widget:
+
+```txt
+PUBLIC_TURNSTILE_SITE_KEY=<your Turnstile site key>
+```
+
+Create a KV namespace for rate limiting and bind it to the Worker:
+
+```txt
+Binding name: MESSAGE_RATE_LIMIT
+```
+
+The checked-in `wrangler.jsonc` includes this binding. Wrangler can create the
+namespace during deploy, or you can add it in the Cloudflare dashboard under
+Settings > Bindings.
+
+The message endpoint uses:
+
+```txt
+Turnstile required on every message
+Same-site Origin/Host checks for miuo.me and www.miuo.me
+Same IP: 3 messages per 10 minutes
+Same IP: 20 messages per day
+Duplicate message suppression for 24 hours
+Honeypot field and message length limits
+```
 
 ## Local development
 

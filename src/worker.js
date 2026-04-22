@@ -1,6 +1,11 @@
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 160;
 const MAX_MESSAGE_LENGTH = 2000;
+const RATE_LIMIT_WINDOW_SECONDS = 10 * 60;
+const RATE_LIMIT_DAY_SECONDS = 24 * 60 * 60;
+const RATE_LIMIT_WINDOW_MAX = 3;
+const RATE_LIMIT_DAY_MAX = 20;
+const DUPLICATE_TTL_SECONDS = 24 * 60 * 60;
 const ALLOWED_HOSTS = new Set(["miuo.me", "www.miuo.me"]);
 const SUCCESS_MESSAGE = "Thanks, your message was sent.";
 
@@ -22,6 +27,22 @@ function validEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+async function sha256(value) {
+  const data = new TextEncoder().encode(value);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(hash)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function clientIp(request) {
+  return (
+    request.headers.get("CF-Connecting-IP") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
 function sameSiteRequest(request) {
   const url = new URL(request.url);
   if (!ALLOWED_HOSTS.has(url.hostname)) return false;
@@ -38,26 +59,120 @@ function sameSiteRequest(request) {
 }
 
 async function verifyTurnstile(request, env, token) {
-  if (!env.TURNSTILE_SECRET_KEY) return true;
-  if (!token) return false;
+  if (!env.TURNSTILE_SECRET_KEY) {
+    return {
+      ok: false,
+      status: 503,
+      message: "Message protection is not configured yet.",
+    };
+  }
+
+  if (!token) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Please complete the verification.",
+    };
+  }
 
   const formData = new FormData();
   formData.append("secret", env.TURNSTILE_SECRET_KEY);
   formData.append("response", token);
 
-  const remoteIp = request.headers.get("CF-Connecting-IP");
+  const remoteIp = clientIp(request);
   if (remoteIp) formData.append("remoteip", remoteIp);
 
-  const response = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    {
-      method: "POST",
-      body: formData,
-    },
-  );
-  const result = await response.json();
+  let result;
+  try {
+    const response = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+    if (!response.ok) throw new Error("Turnstile verification failed.");
+    result = await response.json();
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      message: "Message verification is temporarily unavailable.",
+    };
+  }
 
-  return Boolean(result.success);
+  if (!result.success) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Please complete the verification.",
+    };
+  }
+
+  if (result.hostname && !ALLOWED_HOSTS.has(result.hostname)) {
+    return {
+      ok: false,
+      status: 403,
+      message: "Forbidden.",
+    };
+  }
+
+  return { ok: true };
+}
+
+async function getCounter(namespace, key) {
+  const value = await namespace.get(key);
+  return Number.parseInt(value || "0", 10) || 0;
+}
+
+async function incrementCounter(namespace, key, ttl) {
+  const current = await getCounter(namespace, key);
+  await namespace.put(String(key), String(current + 1), {
+    expirationTtl: ttl,
+  });
+  return current + 1;
+}
+
+async function rateLimit(request, env, payload) {
+  if (!env.MESSAGE_RATE_LIMIT) {
+    return {
+      ok: false,
+      status: 503,
+      message: "Message rate limiting is not configured yet.",
+    };
+  }
+
+  const ipHash = await sha256(clientIp(request));
+  const contentHash = await sha256(
+    `${payload.email.toLowerCase()}:${payload.message.toLowerCase()}`,
+  );
+  const windowKey = `rl:${ipHash}:10m`;
+  const dayKey = `rl:${ipHash}:24h`;
+  const duplicateKey = `dup:${ipHash}:${contentHash}`;
+
+  const [windowCount, dayCount, duplicate] = await Promise.all([
+    getCounter(env.MESSAGE_RATE_LIMIT, windowKey),
+    getCounter(env.MESSAGE_RATE_LIMIT, dayKey),
+    env.MESSAGE_RATE_LIMIT.get(duplicateKey),
+  ]);
+
+  if (
+    windowCount >= RATE_LIMIT_WINDOW_MAX ||
+    dayCount >= RATE_LIMIT_DAY_MAX ||
+    duplicate
+  ) {
+    return { ok: false, silent: true };
+  }
+
+  await Promise.all([
+    incrementCounter(env.MESSAGE_RATE_LIMIT, windowKey, RATE_LIMIT_WINDOW_SECONDS),
+    incrementCounter(env.MESSAGE_RATE_LIMIT, dayKey, RATE_LIMIT_DAY_SECONDS),
+    env.MESSAGE_RATE_LIMIT.put(duplicateKey, "1", {
+      expirationTtl: DUPLICATE_TTL_SECONDS,
+    }),
+  ]);
+
+  return { ok: true };
 }
 
 async function sendEmail(env, payload) {
@@ -137,9 +252,15 @@ async function handleMessage(request, env) {
     return json({ message: "Please write a message first." }, 400);
   }
 
-  const human = await verifyTurnstile(request, env, turnstileToken);
-  if (!human) {
-    return json({ message: "Please complete the verification." }, 400);
+  const verification = await verifyTurnstile(request, env, turnstileToken);
+  if (!verification.ok) {
+    return json({ message: verification.message }, verification.status);
+  }
+
+  const limit = await rateLimit(request, env, { email, message });
+  if (!limit.ok) {
+    if (limit.silent) return json({ message: SUCCESS_MESSAGE });
+    return json({ message: limit.message }, limit.status);
   }
 
   const delivery = await sendEmail(env, { name, email, message });
