@@ -1,12 +1,12 @@
 :root {
   color-scheme: light;
-  --text: #1f272b;
-  --muted: #607078;
-  --surface: rgba(255, 255, 255, 0.82);
-  --surface-strong: rgba(255, 255, 255, 0.94);
-  --line: rgba(31, 39, 43, 0.12);
-  --accent: #1677a8;
-  --accent-dark: #0f526f;
+  --text: #202124;
+  --muted: #5f6368;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --line: #dadce0;
+  --accent: #1a73e8;
+  --accent-dark: #185abc;
 }
 
 * {
@@ -25,7 +25,7 @@ body {
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  background: #edf2f0;
+  background: #f7f8fb;
 }
 
 a {
@@ -35,21 +35,25 @@ a {
 
 .home {
   position: relative;
+  isolation: isolate;
   min-height: 100svh;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(246, 250, 248, 0.52) 0%, rgba(246, 250, 248, 0.32) 48%, rgba(246, 250, 248, 0.14) 100%),
-    url("/home-bg.avif") center / cover no-repeat;
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 32%),
+    linear-gradient(180deg, #fbfcfe 0%, #f7f8fb 42%, #f4f6f8 100%);
 }
 
 .home::before {
   position: absolute;
   inset: 0;
+  z-index: 0;
   content: "";
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04)),
-    rgba(255, 255, 255, 0.02);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 24%);
   pointer-events: none;
+}
+
+.home::after {
+  content: none;
 }
 
 .hero {
@@ -58,11 +62,15 @@ a {
   display: grid;
   grid-template-columns: minmax(300px, 370px) minmax(460px, 640px);
   align-items: center;
-  gap: 84px;
+  gap: 64px;
   width: min(100% - 64px, 1120px);
   min-height: 100svh;
   margin: 0 auto;
-  padding: 96px 0 96px;
+  padding: 64px 0 44px;
+}
+
+.hero::before {
+  content: none;
 }
 
 .profile-card {
@@ -73,13 +81,12 @@ a {
   width: min(100%, 360px);
   min-height: 390px;
   padding: 82px 34px 30px;
-  border: 1px solid rgba(255, 255, 255, 0.74);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: 0 24px 70px rgba(31, 39, 43, 0.12);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.16), 0 8px 22px rgba(60, 64, 67, 0.08);
   text-align: center;
-  backdrop-filter: blur(14px);
-  transform: translateY(32px);
+  transform: translateY(18px);
 }
 
 .profile-avatar {
@@ -87,11 +94,11 @@ a {
   top: -50px;
   width: 108px;
   height: 108px;
-  border: 8px solid rgba(255, 255, 255, 0.92);
+  border: 6px solid #ffffff;
   border-radius: 50%;
   background: #ffffff;
   object-fit: cover;
-  box-shadow: 0 18px 42px rgba(31, 39, 43, 0.14);
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.22), 0 8px 18px rgba(60, 64, 67, 0.12);
   transition:
     transform 180ms ease,
     filter 180ms ease,
@@ -101,14 +108,14 @@ a {
 .profile-avatar:hover {
   transform: scale(1.035);
   filter: brightness(1.04);
-  box-shadow: 0 22px 48px rgba(31, 39, 43, 0.18);
+  box-shadow: 0 2px 4px rgba(60, 64, 67, 0.24), 0 10px 22px rgba(60, 64, 67, 0.14);
 }
 
 .eyebrow {
   width: 100%;
-  margin: 20px 0 0;
-  padding-top: 22px;
-  border-top: 2px solid rgba(22, 119, 168, 0.72);
+  margin: 18px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid #e8eaed;
   color: var(--accent-dark);
   font-size: 16px;
   font-weight: 650;
@@ -125,10 +132,10 @@ h1 {
 
 .intro {
   max-width: 300px;
-  margin: 18px 0 0;
-  color: #34444b;
+  margin: 16px 0 0;
+  color: #3c4043;
   font-size: 16px;
-  line-height: 1.68;
+  line-height: 1.62;
 }
 
 .actions {
@@ -136,7 +143,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 30px;
+  margin-top: 26px;
 }
 
 .actions a,
@@ -146,7 +153,7 @@ h1 {
   justify-content: center;
   min-height: 32px;
   padding: 0 2px 4px;
-  border-bottom: 2px solid rgba(22, 119, 168, 0.34);
+  border-bottom: 1px solid rgba(26, 115, 232, 0.28);
   border-top: 0;
   border-right: 0;
   border-left: 0;
@@ -167,11 +174,10 @@ h1 {
 
 .terminal {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.58);
-  box-shadow: 0 24px 70px rgba(31, 39, 43, 0.13);
-  backdrop-filter: blur(14px);
+  border: 1px solid #d2d6dc;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 3px 10px rgba(60, 64, 67, 0.12), 0 14px 30px rgba(60, 64, 67, 0.1);
   align-self: center;
   width: 100%;
   max-width: 640px;
@@ -185,8 +191,9 @@ h1 {
   gap: 8px;
   height: 36px;
   padding: 0 14px;
-  background: linear-gradient(180deg, rgba(245, 247, 247, 0.94), rgba(206, 211, 210, 0.86));
-  color: #4d5559;
+  border-bottom: 1px solid #e3e7eb;
+  background: #f8f9fa;
+  color: #5f6368;
   cursor: grab;
   font-family: Consolas, Monaco, "Courier New", monospace;
   touch-action: none;
@@ -224,7 +231,9 @@ h1 {
   min-height: 250px;
   overflow: hidden;
   padding: 26px 30px 30px;
-  color: #445057;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 76%, #fdfefe 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  color: #3c4043;
   font-family: Consolas, Monaco, "Courier New", monospace;
   font-size: 15px;
   line-height: 1.55;
