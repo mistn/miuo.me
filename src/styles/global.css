@@ -335,6 +335,7 @@ h1 {
   border: 0;
   background: transparent;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   touch-action: none;
   --pull-x: 0px;
   --pull-y: 0px;
