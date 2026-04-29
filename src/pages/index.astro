@@ -426,14 +426,20 @@ const personJsonLd = {
         await loadTurnstileScript();
         const turnstileWindow = window as Window & {
           turnstile?: {
-            render: (container: HTMLElement, options: { sitekey: string }) => void;
+            render: (
+              container: HTMLElement,
+              options: { sitekey: string; size?: "normal" | "compact" | "flexible" },
+            ) => void;
             reset: () => void;
           };
         };
         if (!turnstileWindow.turnstile) {
           throw new Error("Turnstile script did not load.");
         }
-        turnstileWindow.turnstile.render(turnstileSlot, { sitekey: siteKey });
+        turnstileWindow.turnstile.render(turnstileSlot, {
+          sitekey: siteKey,
+          size: "flexible",
+        });
         turnstileRendered = true;
       }
 

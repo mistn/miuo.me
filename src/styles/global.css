@@ -161,10 +161,12 @@ a {
     box-shadow 180ms ease;
 }
 
-.profile-avatar:hover {
-  transform: scale(1.035);
-  filter: brightness(1.04);
-  box-shadow: var(--avatar-hover-shadow);
+@media (hover: hover) and (pointer: fine) {
+  .profile-avatar:hover {
+    transform: scale(1.035);
+    filter: brightness(1.04);
+    box-shadow: var(--avatar-hover-shadow);
+  }
 }
 
 .eyebrow {
@@ -548,8 +550,16 @@ h1 {
 
 .turnstile-slot {
   display: flex;
+  align-items: center;
   justify-content: center;
-  overflow: hidden;
+  width: 100%;
+  min-height: 65px;
+  overflow: visible;
+}
+
+.turnstile-slot > div,
+.turnstile-slot iframe {
+  max-width: 100%;
 }
 
 .message-status {
@@ -597,7 +607,7 @@ h1 {
   text-align: center;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1040px) {
   .theme-toggle {
     right: 18px;
     width: 40px;
@@ -620,16 +630,13 @@ h1 {
   }
 
   .hero {
-    width: min(100% - 28px, 620px);
-  }
-
-  .hero {
     grid-template-columns: 1fr;
-    gap: 28px;
+    gap: 36px;
     justify-items: center;
     align-items: start;
+    width: min(100% - 48px, 760px);
     min-height: auto;
-    padding: 72px 0 34px;
+    padding: 84px 0 38px;
   }
 
   .profile-card,
@@ -647,11 +654,27 @@ h1 {
 
   .profile-card {
     width: 100%;
-    max-width: 500px;
+    max-width: none;
+    min-height: 0;
+    padding: 72px 48px 30px;
+  }
+
+  .eyebrow {
+    margin-top: 14px;
+    padding-top: 18px;
+  }
+
+  .intro {
+    margin-top: 14px;
+    line-height: 1.55;
+  }
+
+  .actions {
+    margin-top: 18px;
   }
 
   .terminal {
-    max-width: 620px;
+    max-width: none;
   }
 
   .terminal-screen {
@@ -661,6 +684,18 @@ h1 {
   .copyright {
     margin: 0;
     padding: 0 18px 22px;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    width: min(100% - 28px, 620px);
+    gap: 28px;
+    padding: 72px 0 34px;
+  }
+
+  .profile-card {
+    padding: 70px 40px 28px;
   }
 }
 
@@ -758,5 +793,16 @@ h1 {
 
   .message-submit {
     min-height: 46px;
+  }
+}
+
+@media (max-width: 374px) {
+  .message-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .message-form {
+    padding: 18px 12px 20px;
   }
 }
